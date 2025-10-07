@@ -2,6 +2,7 @@
     <div>
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2x-l font-bold">Juego de Rol.</h2>
+            <hr>
             <button @click="$emit('logout')" class="bg-red-500 text-white px-4 py-2
             rounded hover:bg-red-600">Cerrar Sesión.</button>
         </div>
@@ -11,7 +12,7 @@
             <h3 class="text-lg font-semibold mb-4">{{ gameOver ? 'Juego Terminado' : 'Bienvenido al juego' }}</h3>
             <p v-if="gameOver" class="mb-4" :class="winner === 'Jugador' ?
             'text-success' : 'text-danger'">
-            {{ winner ? '${winner} ha ganado' : 'Ha terminado la partida' }}
+            {{ winner ? 'El ' + winner + ' ha ganado' : 'Ha terminado la partida' }}
         </p>
 
         <button @click="startNewGame" class="bg-blue-500 text-white px-4 py-2
@@ -31,7 +32,7 @@
                     </div>
                 </div>
                 <div>
-                    <p class="font-semibold">Dragón: {{dragonHealthPercentage}}/100</p>
+                    <p class="font-semibold">Dragón: {{dragonHealth}}/100</p>
                     <div class="w-full bg-gray-200 rounded-full h-4">
                         <div :style="{width: dragonHealthPercentage + '%'}"
                         :class="dragonHealthClass" class="h-4 rounded-full">
@@ -87,7 +88,7 @@ const playerHealthPercentage = computed(() => Math.max(0, playerHealth.value));
 const dragonHealthPercentage = computed(() => Math.max(0, dragonHealth.value));
 const playerHealthClass = computed(() => {
     if(playerHealth.value <= 20) return 'bg-red-500';
-    if(dragonHealth.value <= 50) return 'bg-yellow-500';
+    if(playerHealth.value <= 50) return 'bg-yellow-500';
     return 'bg-green-500';
 });
 
@@ -96,7 +97,7 @@ const dragonHealthClass = computed(() => {
     if(dragonHealth.value <= 50) return 'bg-yellow-500';
     return 'bg-green-500';
 });
-const canHeal = computed(() => heal.value === 0);
+const canHeal = computed(() => Heal.value === 0);
 const canSpecialAttack = computed(() => SpecialAttack.value === 0);
 
 // Generamos número aleatorio en un rango
@@ -137,7 +138,7 @@ const attack = () => {
     if(gameOver.value) return;
     const damage = random(5, 10);
     dragonHealth.value = Math.max(0, dragonHealth.value - damage);
-    mensajesBatalla.value.unshift('Has atacado al Dragón y causa ${damage} de daño');
+    mensajesBatalla.value.unshift('Has atacado al Dragón y causa ' + damage + ' de daño');
     GameOver();
 };
 
@@ -146,7 +147,7 @@ const specialAttack = () => {
     if(gameOver.value || !canSpecialAttack.value) return;
     const damage = random(10, 20);
     dragonHealth.value = Math.max(0, dragonHealth.value - damage);
-    mensajesBatalla.value.unshift('Has usado tu ataque especial y causa ${damage} de daño');
+    mensajesBatalla.value.unshift('Has usado tu ataque especial y causa ' + damage + ' de daño' );
     SpecialAttack.value = 3;
     GameOver();
 };
@@ -156,7 +157,7 @@ const heal = () => {
     if(gameOver.value || !canHeal.value) return;
     const healAmount = random(5, 10);
     playerHealth.value = Math.min(100, playerHealth.value + healAmount);
-    mensajesBatalla.value.unshift('Te has curado ${{healAmount}} de vida.');
+    mensajesBatalla.value.unshift('Te has curado y obtienes ' + healAmount + ' de vida');
     Heal.value = 3;
     GameOver();
 };
@@ -173,7 +174,7 @@ const dragonAttack = () => {
     if(gameOver.value) return;
     const damage = random(8, 15);
     playerHealth.value = Math.max(0, playerHealth.value - damage);
-    mensajesBatalla.value.unshift('El Dragón te atacó y causa ${damage} de daño');
+    mensajesBatalla.value.unshift('El Dragón te atacó y causa ' + damage + ' de daño');
 
     if(Heal.value > 0) Heal.value -=1;
     if(SpecialAttack.value > 0) SpecialAttack.value -=1;
@@ -186,7 +187,7 @@ onMounted(() => {
         if(gameStarted.value && !gameOver.value){
             dragonAttack();
         }
-    }, 2000); // Cada segundo el dragón ataca
+    }, 2000); // Cada dos segundos el dragón ataca
 });
 
 onUnmounted(() => {
