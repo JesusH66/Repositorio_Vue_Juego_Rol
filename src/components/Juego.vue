@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2x-l font-bold">Juego de Rol.</h2>
+            <h2 class="text-2x-l font-bold">Juego de Rol.</h2> 
             <hr>
             <button @click="$emit('logout')" class="bg-red-500 text-white px-4 py-2
             rounded hover:bg-red-600">Cerrar Sesión.</button>
@@ -47,9 +47,9 @@
                 <div class="grid grid-cols-2 gap-2">
                 <button @click="attack" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
                     Atacar</button>
-                <button @click="heal" :disabled="!canHeal" :class="{ 'bg-gray-400 cursor-not-allowed': !canHeal, 'bg-blue-500 hover:bg-blue-600': canHeal }" class="text-white p-2 rounded">
+                <button @click="heal" :disabled="!acciones.heal" :class="{ 'bg-gray-400 cursor-not-allowed': !acciones.heal, 'bg-blue-500 hover:bg-blue-600': acciones.heal }" class="text-white p-2 rounded">
                     Curar</button>
-                <button @click="specialAttack" :disabled="!canSpecialAttack" :class="{ 'bg-gray-400 cursor-not-allowed': !canSpecialAttack, 'bg-blue-500 hover:bg-blue-600': canSpecialAttack }" class="text-white p-2 rounded">
+                <button @click="specialAttack" :disabled="!acciones.specialAttack" :class="{ 'bg-gray-400 cursor-not-allowed': !acciones.specialAttack, 'bg-blue-500 hover:bg-blue-600': acciones.specialAttack }" class="text-white p-2 rounded">
                     Ataque Especial</button>
                 <button @click="flee" class="bg-red-500 text-white p-2 rounded hover:bg-red-600">
                     Huir</button>
@@ -59,6 +59,7 @@
             <!--Registro-->
             <div>
                 <h3 class="text-lg font-semibold mb-2">Registro de lucha</h3>
+                <p><strong>Número de Turno: </strong> {{turnosGlobales}}</p>
                 <div class="max-h-40 overflow-y-auto border p-2 rounded">
                     <p v-for="(message, index) in mensajesBatalla" :key="index"
                     class="text-sm">{{ message }}</p>
@@ -69,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, computed, defineProps, defineEmits, onMounted, onUnmounted} from 'vue';
+import { ref, computed, defineProps, defineEmits} from 'vue';
 
 const props = defineProps(['currentUser']);
 const emit = defineEmits(['logout']);
@@ -80,8 +81,7 @@ const winner = ref('');
 const playerHealth = ref(100);
 const dragonHealth = ref(100);
 const mensajesBatalla = ref([]);
-const Heal = ref(0);
-const SpecialAttack = ref(0);
+const turnosGlobales = ref(1); //Contador Global
 
 // Propiedades computadas
 const playerHealthPercentage = computed(() => Math.max(0, playerHealth.value));
@@ -97,8 +97,12 @@ const dragonHealthClass = computed(() => {
     if(dragonHealth.value <= 50) return 'bg-yellow-500';
     return 'bg-green-500';
 });
-const canHeal = computed(() => Heal.value === 0);
-const canSpecialAttack = computed(() => SpecialAttack.value === 0);
+
+// Determino si las acciones de ataque especial y curarse están disponibles
+const acciones = computed(() => ({
+    heal: turnosGlobales.value % 3 === 0,
+    specialAttack: turnosGlobales.value % 3 === 0,
+}));
 
 // Generamos número aleatorio en un rango
 const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -113,7 +117,6 @@ const GameOver = () => {
     }
     if(dragonHealth.value <= 0){
         gameOver.value = true;
-        winner.value = true;
         winner.value = 'Jugador';
         mensajesBatalla.value.unshift('Has ganado');
         return true;
@@ -129,8 +132,7 @@ const startNewGame = () => {
     playerHealth.value = 100;
     dragonHealth.value = 100;
     mensajesBatalla.value = [];
-    Heal.value = 0;
-    SpecialAttack.value = 0;
+    turnosGlobales.value = 1; // Iniciamos en 0
 };
 
 // Botón atacar
@@ -139,26 +141,30 @@ const attack = () => {
     const damage = random(5, 10);
     dragonHealth.value = Math.max(0, dragonHealth.value - damage);
     mensajesBatalla.value.unshift('Has atacado al Dragón y causa ' + damage + ' de daño');
+    dragonAttack();
+    turnosGlobales.value ++;
     GameOver();
 };
 
 // Botón de ataque especial
 const specialAttack = () => {
-    if(gameOver.value || !canSpecialAttack.value) return;
+    if(gameOver.value || !acciones.value.specialAttack) return;
     const damage = random(10, 20);
     dragonHealth.value = Math.max(0, dragonHealth.value - damage);
     mensajesBatalla.value.unshift('Has usado tu ataque especial y causa ' + damage + ' de daño' );
-    SpecialAttack.value = 3;
+    turnosGlobales.value ++;
+    dragonAttack();
     GameOver();
 };
 
 // Botón curar
 const heal = () => {
-    if(gameOver.value || !canHeal.value) return;
+    if(gameOver.value || !acciones.value.heal) return;
     const healAmount = random(5, 10);
     playerHealth.value = Math.min(100, playerHealth.value + healAmount);
     mensajesBatalla.value.unshift('Te has curado y obtienes ' + healAmount + ' de vida');
-    Heal.value = 3;
+    turnosGlobales.value ++;
+    dragonAttack();
     GameOver();
 };
 
@@ -175,26 +181,8 @@ const dragonAttack = () => {
     const damage = random(8, 15);
     playerHealth.value = Math.max(0, playerHealth.value - damage);
     mensajesBatalla.value.unshift('El Dragón te atacó y causa ' + damage + ' de daño');
-
-    if(Heal.value > 0) Heal.value -=1;
-    if(SpecialAttack.value > 0) SpecialAttack.value -=1;
     GameOver();
 }
-
-let dragonAttackTimes = null;
-onMounted(() => {
-    dragonAttackTimes = setInterval(() => {
-        if(gameStarted.value && !gameOver.value){
-            dragonAttack();
-        }
-    }, 2000); // Cada dos segundos el dragón ataca
-});
-
-onUnmounted(() => {
-    if(dragonAttackTimes){
-        clearInterval(dragonAttackTimes);
-    }
-});
 
 </script>
 

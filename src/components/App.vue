@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-    <Register v-if="!isLoggedIn && showRegister" @register-success="showRegister
+    <Registro v-if="!isLoggedIn && showRegister" @register-success="showRegister
     =false" />
     <Login v-if="!isLoggedIn && !showRegister" @login-success="handleLogin"
     @show-register="showRegister = true" />
@@ -10,7 +10,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import Register from './Register.vue';
+import Registro from './Registro.vue';
 import Login from './Login.vue';
 import Juego from './Juego.vue';
 
